@@ -7,7 +7,9 @@ let jsDiff = require('diff');
 let colors = require('colors');
 
 export function diff(jsonOld, jsonNew) {
-    let diffResult = jsDiff.diffJson(jsonOld, jsonNew);
+    // let diffResult = jsDiff.diffJson(jsonOld, jsonNew);
+    let diffResult = jsDiff.diffLines(jsonOld, jsonNew,
+                                        {ignoreWhitespace: true});
     let resultFormatted = '';
     diffResult.forEach(element => {
         let color = element.added ? '008000' :
@@ -15,9 +17,15 @@ export function diff(jsonOld, jsonNew) {
                                                         '808080';
         resultFormatted += `<span style="color:#${color};">${element.value
                                             .replace(/\n+/g, '<br>')
+                                            .replace(/\t/g, '&nbsp;&nbsp;&nbsp;&nbsp;')
                                             .replace(/ /g, '&nbsp;')}</span>`;
     });
     return resultFormatted;
+}
+
+function cleanupText(asn1Text) {
+    let withoutComment = asn1Text.replace(/^\s*?--.+?$/gm, '');
+    return withoutComment.replace(/( |\t)+/g, ' ');
 }
 
 function removeInventory(asn1Json) {
@@ -35,12 +43,14 @@ if (require.main == module) {
         let textOld = readFileSync(resolve(process.cwd(), filenameOld.dir,
                                                             filenameOld.base),
                                     'utf8');
-        let asn1Old = removeInventory(parser.parse(extract(textOld)));
+        let asn1Old = cleanupText(extract(textOld));
+        // let jsonOld = removeInventory(parser.parse(asn1Old));
         let filenameNew = parse(process.argv[3]);
         let textNew = readFileSync(resolve(process.cwd(), filenameNew.dir,
                                                             filenameNew.base),
                                     'utf8');
-        let asn1New = removeInventory(parser.parse(extract(textNew)));
+        let asn1New = cleanupText(extract(textNew));
+        // let jsonNew = removeInventory(parser.parse(asn1New));
         let messageIEname = '__all';
         if (process.argv.length >= 5) {
             messageIEname = process.argv[4];
@@ -50,6 +60,7 @@ if (require.main == module) {
         }
         // console.log(JSON.stringify(ans1Old, null, 2));
         // console.log(JSON.stringify(asn1New, null, 2));
+        // let diffResult = diff(jsonOld, jsonNew);
         let diffResult = diff(asn1Old, asn1New);
         let filenameOut = `${filenameOld.base}-${filenameNew.base}.htm`;
         writeFileSync(resolve(process.cwd(), filenameOut), diffResult);
