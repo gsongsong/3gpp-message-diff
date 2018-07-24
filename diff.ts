@@ -7,17 +7,68 @@ let jsDiff = require('diff');
 let colors = require('colors');
 
 export function diff(jsonOld, jsonNew) {
-    let diffResult = jsDiff.diffJson(jsonOld, jsonNew);
-    let resultFormatted = '';
-    diffResult.forEach(element => {
-        let color = element.added ? '008000' :
-                                    element.removed ? 'ff0000' :
-                                                        '808080';
-        resultFormatted += `<span style="color:#${color};">${element.value
-                                            .replace(/\n+/g, '<br>')
-                                            .replace(/ /g, '&nbsp;')}</span>`;
-    });
-    return resultFormatted;
+    // let diffResult = jsDiff.diffJson(jsonOld, jsonNew);
+    // let resultFormatted = '';
+    // diffResult.forEach(element => {
+    //     let color = element.added ? '008000' :
+    //                                 element.removed ? 'ff0000' :
+    //                                                     '808080';
+    //     resultFormatted += `<span style="color:#${color};">${element.value
+    //                                         .replace(/\n+/g, '<br>')
+    //                                         .replace(/ /g, '&nbsp;')}</span>`;
+    // });
+    // return resultFormatted;
+}
+
+export function diffAll(jsonOld, jsonNew) {
+    let moduleNames = [];
+    for (let moduleName in jsonOld) {
+        if (moduleNames.indexOf(moduleName) == -1) {
+            moduleNames.push(moduleName);
+        }
+    }
+    for (let moduleName in jsonNew) {
+        if (moduleNames.indexOf(moduleName) == -1) {
+            moduleNames.push(moduleName);
+        }
+    }
+    moduleNames.sort();
+    for (let moduleName of moduleNames) {
+        let definitions = [];
+        for (let definition in jsonOld[moduleName]) {
+            if (definitions.indexOf(definition) == -1) {
+                definitions.push(definition);
+            }
+        }
+        for (let definition in jsonNew[moduleName]) {
+            if (definitions.indexOf(definition) == -1) {
+                definitions.push(definition);
+            }
+        }
+        definitions.sort();
+        for (let definition of definitions) {
+            if (!jsonOld[moduleName] && jsonNew[moduleName]) {
+                console.log(`+ ${moduleName}/${definition}`);
+                continue;
+            }
+            if (jsonOld[moduleName] && !jsonNew[moduleName]) {
+                console.log(`- ${moduleName}/${definition}`);
+                continue;
+            }
+            if (jsonOld[moduleName] && jsonNew[moduleName]) {
+                if (!jsonOld[moduleName][definition] && jsonNew[moduleName][definition]) {
+                    console.log(`+ ${moduleName}/${definition}`);
+                    continue;
+                }
+                if (jsonOld[moduleName][definition] && !jsonNew[moduleName][definition]) {
+                    console.log(`- ${moduleName}/${definition}`);
+                    continue;
+                }
+                // TODO: compare two
+                continue;
+            }
+        }
+    }
 }
 
 function removeInventory(asn1Json) {
@@ -46,13 +97,16 @@ if (require.main == module) {
             messageIEname = process.argv[4];
         }
         if (messageIEname == '__all') {
+            let diffResult = diffAll(asn1Old, asn1New);
+            let filenameOut = `${filenameOld.base}-${filenameNew.base}.htm`;
+            writeFileSync(resolve(process.cwd(), filenameOut), diffResult);
         } else {
+            let diffResult = diff(asn1Old, asn1New);
+            let filenameOut = `${filenameOld.base}-${filenameNew.base}.htm`;
+            writeFileSync(resolve(process.cwd(), filenameOut), diffResult);
         }
         // console.log(JSON.stringify(ans1Old, null, 2));
         // console.log(JSON.stringify(asn1New, null, 2));
-        let diffResult = diff(asn1Old, asn1New);
-        let filenameOut = `${filenameOld.base}-${filenameNew.base}.htm`;
-        writeFileSync(resolve(process.cwd(), filenameOut), diffResult);
     } else {
         console.log('Usage: node diff <spec_old> <spec_new>');
         console.log('ex   : node diff 38331-f10 38331-f21');
