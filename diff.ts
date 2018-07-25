@@ -13,7 +13,7 @@ export function diff(jsonOld, jsonNew) {
         let color = element.added ? '008000' :
                                     element.removed ? 'ff0000' :
                                                         '808080';
-        diffResultFormatted += `<span style="color:#${color};">${element.value
+        diffResultFormatted += `<span style="color:#${color}; font-family: monospace;">${element.value
                                             .replace(/\n+/g, '<br>')
                                             .replace(/ /g, '&nbsp;')}</span>`;
     });
