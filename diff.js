@@ -20,7 +20,11 @@ function diff(jsonOld, jsonNew) {
     // return resultFormatted;
 }
 exports.diff = diff;
+var tokenRemoved = '<span style="color: #f00; font-family: monospace;">-';
+var tokenAdded = '<span style="color: #008000; font-family: monospace;">+';
+var tokenUnknown = '<span style="color: #808080; font-family: monospace;">?'; // TODO
 function diffAll(jsonOld, jsonNew) {
+    var diffResult = '';
     var moduleNames = [];
     for (var moduleName in jsonOld) {
         if (moduleNames.indexOf(moduleName) == -1) {
@@ -50,27 +54,28 @@ function diffAll(jsonOld, jsonNew) {
         for (var _a = 0, definitions_1 = definitions; _a < definitions_1.length; _a++) {
             var definition = definitions_1[_a];
             if (!jsonOld[moduleName] && jsonNew[moduleName]) {
-                console.log("+ " + moduleName + "/" + definition);
+                diffResult += tokenAdded + " " + moduleName + "/" + definition + "</span><br>";
                 continue;
             }
             if (jsonOld[moduleName] && !jsonNew[moduleName]) {
-                console.log("- " + moduleName + "/" + definition);
+                diffResult += tokenRemoved + " " + moduleName + "/" + definition + "</span><br>";
                 continue;
             }
             if (jsonOld[moduleName] && jsonNew[moduleName]) {
                 if (!jsonOld[moduleName][definition] && jsonNew[moduleName][definition]) {
-                    console.log("+ " + moduleName + "/" + definition);
+                    diffResult += tokenAdded + " " + moduleName + "/" + definition + "</span><br>";
                     continue;
                 }
                 if (jsonOld[moduleName][definition] && !jsonNew[moduleName][definition]) {
-                    console.log("- " + moduleName + "/" + definition);
+                    diffResult += tokenRemoved + " " + moduleName + "/" + definition + "</span><br>";
                     continue;
                 }
-                // TODO: compare two
+                diffResult += tokenUnknown + " " + moduleName + "/" + definition + "</span><br>";
                 continue;
             }
         }
     }
+    return diffResult;
 }
 exports.diffAll = diffAll;
 function removeInventory(asn1Json) {

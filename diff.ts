@@ -20,7 +20,12 @@ export function diff(jsonOld, jsonNew) {
     // return resultFormatted;
 }
 
+let tokenRemoved = '<span style="color: #f00; font-family: monospace;">-';
+let tokenAdded = '<span style="color: #008000; font-family: monospace;">+';
+let tokenUnknown = '<span style="color: #808080; font-family: monospace;">?'; // TODO
+
 export function diffAll(jsonOld, jsonNew) {
+    let diffResult = '';
     let moduleNames = [];
     for (let moduleName in jsonOld) {
         if (moduleNames.indexOf(moduleName) == -1) {
@@ -48,27 +53,28 @@ export function diffAll(jsonOld, jsonNew) {
         definitions.sort();
         for (let definition of definitions) {
             if (!jsonOld[moduleName] && jsonNew[moduleName]) {
-                console.log(`+ ${moduleName}/${definition}`);
+                diffResult += `${tokenAdded} ${moduleName}/${definition}</span><br>`;
                 continue;
             }
             if (jsonOld[moduleName] && !jsonNew[moduleName]) {
-                console.log(`- ${moduleName}/${definition}`);
+                diffResult += `${tokenRemoved} ${moduleName}/${definition}</span><br>`;
                 continue;
             }
             if (jsonOld[moduleName] && jsonNew[moduleName]) {
                 if (!jsonOld[moduleName][definition] && jsonNew[moduleName][definition]) {
-                    console.log(`+ ${moduleName}/${definition}`);
+                    diffResult += `${tokenAdded} ${moduleName}/${definition}</span><br>`;
                     continue;
                 }
                 if (jsonOld[moduleName][definition] && !jsonNew[moduleName][definition]) {
-                    console.log(`- ${moduleName}/${definition}`);
+                    diffResult += `${tokenRemoved} ${moduleName}/${definition}</span><br>`;
                     continue;
                 }
-                // TODO: compare two
+                diffResult += `${tokenUnknown} ${moduleName}/${definition}</span><br>`;
                 continue;
             }
         }
     }
+    return diffResult;
 }
 
 function removeInventory(asn1Json) {
