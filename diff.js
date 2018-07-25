@@ -7,22 +7,23 @@ var parser = require('third-gen-asn1-parser');
 var jsDiff = require('diff');
 var colors = require('colors');
 function diff(jsonOld, jsonNew) {
-    // let diffResult = jsDiff.diffJson(jsonOld, jsonNew);
-    // let resultFormatted = '';
-    // diffResult.forEach(element => {
-    //     let color = element.added ? '008000' :
-    //                                 element.removed ? 'ff0000' :
-    //                                                     '808080';
-    //     resultFormatted += `<span style="color:#${color};">${element.value
-    //                                         .replace(/\n+/g, '<br>')
-    //                                         .replace(/ /g, '&nbsp;')}</span>`;
-    // });
-    // return resultFormatted;
+    var diffResult = jsDiff.diffJson(jsonOld, jsonNew);
+    var diffResultFormatted = '';
+    diffResult.forEach(function (element) {
+        var color = element.added ? '008000' :
+            element.removed ? 'ff0000' :
+                '808080';
+        diffResultFormatted += "<span style=\"color:#" + color + ";\">" + element.value
+            .replace(/\n+/g, '<br>')
+            .replace(/ /g, '&nbsp;') + "</span>";
+    });
+    return diffResultFormatted;
 }
 exports.diff = diff;
 var tokenRemoved = '<span style="color: #f00; font-family: monospace;">-';
 var tokenAdded = '<span style="color: #008000; font-family: monospace;">+';
-var tokenUnknown = '<span style="color: #808080; font-family: monospace;">?'; // TODO
+var tokenNoChange = '<span style="color: #808080; font-family: monospace;">&nbsp;'; // TODO
+var tokenPartialChange = '<span style="color: #808080; font-family: monospace;">?'; // TODO
 function diffAll(jsonOld, jsonNew) {
     var diffResult = '';
     var moduleNames = [];
@@ -70,7 +71,15 @@ function diffAll(jsonOld, jsonNew) {
                     diffResult += tokenRemoved + " " + moduleName + "/" + definition + "</span><br>";
                     continue;
                 }
-                diffResult += tokenUnknown + " " + moduleName + "/" + definition + "</span><br>";
+                var diffResultFormatted = diff(jsonOld[moduleName][definition], jsonNew[moduleName][definition]);
+                if (diffResultFormatted.indexOf('#ff0000') == -1 &&
+                    diffResultFormatted.indexOf('#008000') == -1) {
+                    diffResult += tokenNoChange + " " + moduleName + "/" + definition + "</span><br>";
+                }
+                else {
+                    diffResult += tokenPartialChange + " " + moduleName + "/" + definition + "</span><br>";
+                    diffResult += diffResultFormatted + '<br>';
+                }
                 continue;
             }
         }
