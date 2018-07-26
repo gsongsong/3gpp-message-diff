@@ -3,27 +3,17 @@ import { parse, resolve } from 'path';
 
 let extract = require('third-gen-asn1-extractor');
 let parser = require('third-gen-asn1-parser');
-let jsDiff = require('diff');
+let diffJson = require('diff-json');
 let colors = require('colors');
-
-export function diff(jsonOld, jsonNew) {
-    let diffResult = jsDiff.diffJson(jsonOld, jsonNew);
-    let diffResultFormatted = '';
-    diffResult.forEach(element => {
-        let color = element.added ? '008000' :
-                                    element.removed ? 'ff0000' :
-                                                        '808080';
-        diffResultFormatted += `<span style="color:#${color}; font-family: monospace;">${element.value
-                                            .replace(/\n+/g, '<br>')
-                                            .replace(/ /g, '&nbsp;')}</span>`;
-    });
-    return diffResultFormatted;
-}
 
 let tokenRemoved = '<span style="color: #f00; font-family: monospace;">-';
 let tokenAdded = '<span style="color: #008000; font-family: monospace;">+';
 let tokenNoChange = '<span style="color: #808080; font-family: monospace;">&nbsp;'; // TODO
 let tokenPartialChange = '<span style="color: #808080; font-family: monospace;">?'; // TODO
+
+function diff(jsonOld, jsonNew) {
+    // TODO
+}
 
 export function diffAll(jsonOld, jsonNew) {
     let diffResult = '';
@@ -70,20 +60,25 @@ export function diffAll(jsonOld, jsonNew) {
                     diffResult += `${tokenRemoved} ${moduleName}/${definition}</span><br>`;
                     continue;
                 }
-                let diffResultFormatted = diff(jsonOld[moduleName][definition],
+                let diffJsonResult = diffJson.diff(jsonOld[moduleName][definition],
                     jsonNew[moduleName][definition]);
-                if (diffResultFormatted.indexOf('#ff0000') == -1 &&
-                    diffResultFormatted.indexOf('#008000') == -1) {
+                if (isJsonEmpty(diffJsonResult)) {
                     diffResult += `${tokenNoChange} ${moduleName}/${definition}</span><br>`;
                 } else {
                     diffResult += `${tokenPartialChange} ${moduleName}/${definition}</span><br>`;
-                    diffResult += diffResultFormatted + '<br>';
+                    diffResult += JSON.stringify(diffJsonResult, null, 2)
+                                        .replace(/ /g, '&nbsp;')
+                                        .replace(/\n/g, '<br>') + '<br>';
                 }
                 continue;
             }
         }
     }
     return diffResult;
+}
+
+function isJsonEmpty(json) {
+    return Object.keys(json).length == 0;
 }
 
 function removeInventory(asn1Json) {

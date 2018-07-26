@@ -4,26 +4,15 @@ var fs_1 = require("fs");
 var path_1 = require("path");
 var extract = require('third-gen-asn1-extractor');
 var parser = require('third-gen-asn1-parser');
-var jsDiff = require('diff');
+var diffJson = require('diff-json');
 var colors = require('colors');
-function diff(jsonOld, jsonNew) {
-    var diffResult = jsDiff.diffJson(jsonOld, jsonNew);
-    var diffResultFormatted = '';
-    diffResult.forEach(function (element) {
-        var color = element.added ? '008000' :
-            element.removed ? 'ff0000' :
-                '808080';
-        diffResultFormatted += "<span style=\"color:#" + color + "; font-family: monospace;\">" + element.value
-            .replace(/\n+/g, '<br>')
-            .replace(/ /g, '&nbsp;') + "</span>";
-    });
-    return diffResultFormatted;
-}
-exports.diff = diff;
 var tokenRemoved = '<span style="color: #f00; font-family: monospace;">-';
 var tokenAdded = '<span style="color: #008000; font-family: monospace;">+';
 var tokenNoChange = '<span style="color: #808080; font-family: monospace;">&nbsp;'; // TODO
 var tokenPartialChange = '<span style="color: #808080; font-family: monospace;">?'; // TODO
+function diff(jsonOld, jsonNew) {
+    // TODO
+}
 function diffAll(jsonOld, jsonNew) {
     var diffResult = '';
     var moduleNames = [];
@@ -71,14 +60,15 @@ function diffAll(jsonOld, jsonNew) {
                     diffResult += tokenRemoved + " " + moduleName + "/" + definition + "</span><br>";
                     continue;
                 }
-                var diffResultFormatted = diff(jsonOld[moduleName][definition], jsonNew[moduleName][definition]);
-                if (diffResultFormatted.indexOf('#ff0000') == -1 &&
-                    diffResultFormatted.indexOf('#008000') == -1) {
+                var diffJsonResult = diffJson.diff(jsonOld[moduleName][definition], jsonNew[moduleName][definition]);
+                if (isJsonEmpty(diffJsonResult)) {
                     diffResult += tokenNoChange + " " + moduleName + "/" + definition + "</span><br>";
                 }
                 else {
                     diffResult += tokenPartialChange + " " + moduleName + "/" + definition + "</span><br>";
-                    diffResult += diffResultFormatted + '<br>';
+                    diffResult += JSON.stringify(diffJsonResult, null, 2)
+                        .replace(/ /g, '&nbsp;')
+                        .replace(/\n/g, '<br>') + '<br>';
                 }
                 continue;
             }
@@ -87,6 +77,9 @@ function diffAll(jsonOld, jsonNew) {
     return diffResult;
 }
 exports.diffAll = diffAll;
+function isJsonEmpty(json) {
+    return Object.keys(json).length == 0;
+}
 function removeInventory(asn1Json) {
     for (var moduleName in asn1Json) {
         for (var definition in asn1Json[moduleName]) {
