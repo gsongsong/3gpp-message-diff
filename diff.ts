@@ -9,7 +9,7 @@ let colors = require('colors');
 let tokenRemoved = '<span style="color: #f00; font-family: monospace;">-';
 let tokenAdded = '<span style="color: #008000; font-family: monospace;">+';
 let tokenNoChange = '<span style="color: #808080; font-family: monospace;">&nbsp;'; // TODO
-let tokenPartialChange = '<span style="color: #808080; font-family: monospace;">?'; // TODO
+let tokenPartialChange = '<span style="color: #FF8C00; font-family: monospace;">?'; // TODO
 
 function diff(jsonOld, jsonNew) {
     // TODO
