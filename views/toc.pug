@@ -1,0 +1,44 @@
+html
+    head
+        style
+            include bootstrap.min.css
+            include style.css
+    body
+        div(class="container-fluid")
+            div(class="row")
+                div(class="col text-danger border border-danger m-3")
+                    h1 #{oldSpec}
+                div(class="col text-success border border-success m-3")
+                    h1 #{newSpec}
+            div(class="row")
+                div(class="col text-secondary bg-light m-3")
+                    h1 Untouched
+                    ul(class="listUntouched text-monospace")
+                        each item in listUntouched
+                            li #{item['name']}
+            div(class="row")
+                div(class="col text-danger border border-danger m-3")
+                    h1 Removed
+                    ul(class="text-monospace listRemoved")
+                        each item in listRemoved
+                            li #{item['name']}
+                div(class="col text-success border border-success m-3")
+                    h1 Added
+                    ul(class="text-monospace listAdded")
+                        each item in listAdded
+                            li #{item['name']}
+            div(class="row")
+                div(class="col border border-warning m-3")
+                    h1 Modified (TOC)
+                    ul(class="listModifiedToc text-monospace")
+                        each item in listModified
+                            li #{item['name']}
+            div(class="row")
+                div(class="col border border-warning m-3")
+                    h1 Modified (Diff)
+                    ul(class="text-monospace")
+                        each item in listModified
+                            li
+                                .
+                                    #{item['name']}
+                                div Diff here

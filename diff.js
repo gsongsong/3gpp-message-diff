@@ -1,88 +1,92 @@
 "use strict";
-exports.__esModule = true;
-var fs_1 = require("fs");
-var path_1 = require("path");
-var extract = require('third-gen-asn1-extractor');
-var parser = require('third-gen-asn1-parser');
-var diffJson = require('diff-json');
-var colors = require('colors');
-var tokenRemoved = '<span style="color: #f00; font-family: monospace;">-';
-var tokenAdded = '<span style="color: #008000; font-family: monospace;">+';
-var tokenNoChange = '<span style="color: #808080; font-family: monospace;">&nbsp;'; // TODO
-var tokenPartialChange = '<span style="color: #FF8C00; font-family: monospace;">?'; // TODO
+Object.defineProperty(exports, "__esModule", { value: true });
+const fs_1 = require("fs");
+const path_1 = require("path");
+let extract = require('third-gen-asn1-extractor');
+let parser = require('third-gen-asn1-parser');
+let formatter = require('third-gen-message-formatter-ran2');
+let diffJson = require('diff-json');
+let colors = require('colors');
+let pug = require('pug');
+let tokenRemoved = '<span style="color: #f00; font-family: monospace;">-';
+let tokenAdded = '<span style="color: #008000; font-family: monospace;">+';
+let tokenNoChange = '<span style="color: #808080; font-family: monospace;">&nbsp;'; // TODO
+let tokenPartialChange = '<span style="color: #FF8C00; font-family: monospace;">?'; // TODO
 function diff(jsonOld, jsonNew) {
     // TODO
 }
 function diffAll(jsonOld, jsonNew) {
-    var diffResult = '';
-    var moduleNames = [];
-    for (var moduleName in jsonOld) {
+    let listRemoved = [];
+    let listAdded = [];
+    let listUntouched = [];
+    let listModified = [];
+    let moduleNames = [];
+    for (let moduleName in jsonOld) {
         if (moduleNames.indexOf(moduleName) == -1) {
             moduleNames.push(moduleName);
         }
     }
-    for (var moduleName in jsonNew) {
+    for (let moduleName in jsonNew) {
         if (moduleNames.indexOf(moduleName) == -1) {
             moduleNames.push(moduleName);
         }
     }
     moduleNames.sort();
-    for (var _i = 0, moduleNames_1 = moduleNames; _i < moduleNames_1.length; _i++) {
-        var moduleName = moduleNames_1[_i];
-        var definitions = [];
-        for (var definition in jsonOld[moduleName]) {
+    for (let moduleName of moduleNames) {
+        let definitions = [];
+        for (let definition in jsonOld[moduleName]) {
             if (definitions.indexOf(definition) == -1) {
                 definitions.push(definition);
             }
         }
-        for (var definition in jsonNew[moduleName]) {
+        for (let definition in jsonNew[moduleName]) {
             if (definitions.indexOf(definition) == -1) {
                 definitions.push(definition);
             }
         }
         definitions.sort();
-        for (var _a = 0, definitions_1 = definitions; _a < definitions_1.length; _a++) {
-            var definition = definitions_1[_a];
+        for (let definition of definitions) {
+            if (definition == 'import') {
+                continue;
+            }
             if (!jsonOld[moduleName] && jsonNew[moduleName]) {
-                diffResult += tokenAdded + " " + moduleName + "/" + definition + "</span><br>";
+                listAdded.push({ moduleName: moduleName, name: definition });
                 continue;
             }
             if (jsonOld[moduleName] && !jsonNew[moduleName]) {
-                diffResult += tokenRemoved + " " + moduleName + "/" + definition + "</span><br>";
+                listRemoved.push({ moduleName: moduleName, name: definition });
                 continue;
             }
             if (jsonOld[moduleName] && jsonNew[moduleName]) {
                 if (!jsonOld[moduleName][definition] && jsonNew[moduleName][definition]) {
-                    diffResult += tokenAdded + " " + moduleName + "/" + definition + "</span><br>";
+                    listAdded.push({ moduleName: moduleName, name: definition });
                     continue;
                 }
                 if (jsonOld[moduleName][definition] && !jsonNew[moduleName][definition]) {
-                    diffResult += tokenRemoved + " " + moduleName + "/" + definition + "</span><br>";
+                    listRemoved.push({ moduleName: moduleName, name: definition });
                     continue;
                 }
-                var diffJsonResult = diffJson.diff(jsonOld[moduleName][definition], jsonNew[moduleName][definition]);
+                let diffJsonResult = diffJson.diff(jsonOld[moduleName][definition], jsonNew[moduleName][definition]);
                 if (isJsonEmpty(diffJsonResult)) {
-                    diffResult += tokenNoChange + " " + moduleName + "/" + definition + "</span><br>";
+                    listUntouched.push({ moduleName: moduleName, name: definition });
                 }
                 else {
-                    diffResult += tokenPartialChange + " " + moduleName + "/" + definition + "</span><br>";
-                    diffResult += JSON.stringify(diffJsonResult, null, 2)
-                        .replace(/ /g, '&nbsp;')
-                        .replace(/\n/g, '<br>') + '<br>';
+                    listModified.push({ moduleName: moduleName, name: definition });
                 }
                 continue;
             }
         }
     }
-    return diffResult;
+    return { listAdded: listAdded, listRemoved: listRemoved,
+        listUntouched: listUntouched, listModified: listModified };
 }
 exports.diffAll = diffAll;
 function isJsonEmpty(json) {
     return Object.keys(json).length == 0;
 }
 function removeInventory(asn1Json) {
-    for (var moduleName in asn1Json) {
-        for (var definition in asn1Json[moduleName]) {
+    for (let moduleName in asn1Json) {
+        for (let definition in asn1Json[moduleName]) {
             delete asn1Json[moduleName][definition]['inventory'];
         }
     }
@@ -90,24 +94,31 @@ function removeInventory(asn1Json) {
 }
 if (require.main == module) {
     if (process.argv.length >= 4) {
-        var filenameOld = path_1.parse(process.argv[2]);
-        var textOld = fs_1.readFileSync(path_1.resolve(process.cwd(), filenameOld.dir, filenameOld.base), 'utf8');
-        var asn1Old = removeInventory(parser.parse(extract(textOld)));
-        var filenameNew = path_1.parse(process.argv[3]);
-        var textNew = fs_1.readFileSync(path_1.resolve(process.cwd(), filenameNew.dir, filenameNew.base), 'utf8');
-        var asn1New = removeInventory(parser.parse(extract(textNew)));
-        var messageIEname = '__all';
+        let filenameOld = path_1.parse(process.argv[2]);
+        let textOld = fs_1.readFileSync(path_1.resolve(process.cwd(), filenameOld.dir, filenameOld.base), 'utf8');
+        let asn1Old = removeInventory(parser.parse(extract(textOld)));
+        let filenameNew = path_1.parse(process.argv[3]);
+        let textNew = fs_1.readFileSync(path_1.resolve(process.cwd(), filenameNew.dir, filenameNew.base), 'utf8');
+        let asn1New = removeInventory(parser.parse(extract(textNew)));
+        let messageIEname = '__all';
         if (process.argv.length >= 5) {
             messageIEname = process.argv[4];
         }
         if (messageIEname == '__all') {
-            var diffResult = diffAll(asn1Old, asn1New);
-            var filenameOut = filenameOld.base + "-" + filenameNew.base + ".htm";
-            fs_1.writeFileSync(path_1.resolve(process.cwd(), filenameOut), diffResult);
+            let diffResult = diffAll(asn1Old, asn1New);
+            let filenameOut = `${filenameOld.base}-${filenameNew.base}.html`;
+            fs_1.writeFileSync(path_1.resolve(process.cwd(), filenameOut), pug.renderFile('views/toc.pug', {
+                oldSpec: filenameOld.name,
+                newSpec: filenameNew.name,
+                listAdded: diffResult.listAdded,
+                listRemoved: diffResult.listRemoved,
+                listModified: diffResult.listModified,
+                listUntouched: diffResult.listUntouched
+            }));
         }
         else {
-            var diffResult = diff(asn1Old, asn1New);
-            var filenameOut = filenameOld.base + "-" + filenameNew.base + ".htm";
+            let diffResult = diff(asn1Old, asn1New);
+            let filenameOut = `${filenameOld.base}-${filenameNew.base}.htm`;
             fs_1.writeFileSync(path_1.resolve(process.cwd(), filenameOut), diffResult);
         }
         // console.log(JSON.stringify(ans1Old, null, 2));

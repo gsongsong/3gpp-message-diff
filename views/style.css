@@ -1,0 +1,19 @@
+ul {
+    list-style: none;
+}
+
+.listUntouched {
+    columns: 2;
+}
+
+.listRemoved > li:before {
+    content: '-';
+}
+
+.listAdded > li:before {
+    content: '+';
+}
+
+.listModifiedToc {
+    columns: 2;
+}

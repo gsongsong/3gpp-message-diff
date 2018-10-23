@@ -3,8 +3,10 @@ import { parse, resolve } from 'path';
 
 let extract = require('third-gen-asn1-extractor');
 let parser = require('third-gen-asn1-parser');
+let formatter = require('third-gen-message-formatter-ran2');
 let diffJson = require('diff-json');
 let colors = require('colors');
+let pug = require('pug');
 
 let tokenRemoved = '<span style="color: #f00; font-family: monospace;">-';
 let tokenAdded = '<span style="color: #008000; font-family: monospace;">+';
@@ -16,7 +18,11 @@ function diff(jsonOld, jsonNew) {
 }
 
 export function diffAll(jsonOld, jsonNew) {
-    let diffResult = '';
+    let listRemoved = [];
+    let listAdded = [];
+    let listUntouched = [];
+    let listModified = [];
+
     let moduleNames = [];
     for (let moduleName in jsonOld) {
         if (moduleNames.indexOf(moduleName) == -1) {
@@ -43,38 +49,39 @@ export function diffAll(jsonOld, jsonNew) {
         }
         definitions.sort();
         for (let definition of definitions) {
+            if (definition == 'import') {
+                continue;
+            }
             if (!jsonOld[moduleName] && jsonNew[moduleName]) {
-                diffResult += `${tokenAdded} ${moduleName}/${definition}</span><br>`;
+                listAdded.push({moduleName: moduleName, name: definition});
                 continue;
             }
             if (jsonOld[moduleName] && !jsonNew[moduleName]) {
-                diffResult += `${tokenRemoved} ${moduleName}/${definition}</span><br>`;
+                listRemoved.push({moduleName: moduleName, name: definition});
                 continue;
             }
             if (jsonOld[moduleName] && jsonNew[moduleName]) {
                 if (!jsonOld[moduleName][definition] && jsonNew[moduleName][definition]) {
-                    diffResult += `${tokenAdded} ${moduleName}/${definition}</span><br>`;
+                    listAdded.push({moduleName: moduleName, name: definition});
                     continue;
                 }
                 if (jsonOld[moduleName][definition] && !jsonNew[moduleName][definition]) {
-                    diffResult += `${tokenRemoved} ${moduleName}/${definition}</span><br>`;
+                    listRemoved.push({moduleName: moduleName, name: definition});
                     continue;
                 }
                 let diffJsonResult = diffJson.diff(jsonOld[moduleName][definition],
                     jsonNew[moduleName][definition]);
                 if (isJsonEmpty(diffJsonResult)) {
-                    diffResult += `${tokenNoChange} ${moduleName}/${definition}</span><br>`;
+                    listUntouched.push({moduleName: moduleName, name: definition});
                 } else {
-                    diffResult += `${tokenPartialChange} ${moduleName}/${definition}</span><br>`;
-                    diffResult += JSON.stringify(diffJsonResult, null, 2)
-                                        .replace(/ /g, '&nbsp;')
-                                        .replace(/\n/g, '<br>') + '<br>';
+                    listModified.push({moduleName: moduleName, name: definition});
                 }
                 continue;
             }
         }
     }
-    return diffResult;
+    return {listAdded: listAdded, listRemoved: listRemoved,
+            listUntouched: listUntouched, listModified: listModified};
 }
 
 function isJsonEmpty(json) {
@@ -108,8 +115,16 @@ if (require.main == module) {
         }
         if (messageIEname == '__all') {
             let diffResult = diffAll(asn1Old, asn1New);
-            let filenameOut = `${filenameOld.base}-${filenameNew.base}.htm`;
-            writeFileSync(resolve(process.cwd(), filenameOut), diffResult);
+            let filenameOut = `${filenameOld.base}-${filenameNew.base}.html`;
+            writeFileSync(resolve(process.cwd(), filenameOut),
+                            pug.renderFile('views/toc.pug', {
+                                oldSpec: filenameOld.name,
+                                newSpec: filenameNew.name,
+                                listAdded: diffResult.listAdded,
+                                listRemoved: diffResult.listRemoved,
+                                listModified: diffResult.listModified,
+                                listUntouched: diffResult.listUntouched
+                            }));
         } else {
             let diffResult = diff(asn1Old, asn1New);
             let filenameOut = `${filenameOld.base}-${filenameNew.base}.htm`;

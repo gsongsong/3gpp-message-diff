@@ -1,7 +1,7 @@
 {
   "name": "third-gen-message-diff",
   "description": "Compares an old and a new 3GPP message/IE definitions",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "main": "diff.js",
   "scripts": {
     "test": "tsc diff & node diff resources\\38331-f10.txt resources\\38331-f21.txt"
@@ -17,13 +17,15 @@
   },
   "homepage": "https://github.com/gsongsong/3gpp-message-diff#readme",
   "dependencies": {
-    "colors": "^1.3.1",
+    "colors": "^1.3.2",
     "diff": "^3.5.0",
     "diff-json": "^0.1.11",
+    "pug": "^2.0.3",
     "third-gen-asn1-extractor": "^1.0.2",
-    "third-gen-asn1-parser": "^1.0.3"
+    "third-gen-asn1-parser": "^1.0.6",
+    "third-gen-message-formatter-ran2": "^1.4.0"
   },
   "devDependencies": {
-    "@types/node": "^10.5.2"
+    "@types/node": "^10.12.0"
   }
 }
