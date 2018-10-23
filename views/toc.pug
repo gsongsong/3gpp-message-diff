@@ -2,7 +2,12 @@ html
     head
         style
             include bootstrap.min.css
+            include diff2html.min.css
             include style.css
+        script
+            include jquery-3.3.1.min.js
+            include diff2html.min.js
+            include diff2html-ui.min.js
     body
         div(class="container-fluid")
             div(class="row")
@@ -10,23 +15,23 @@ html
                     h1 #{oldSpec}
                 div(class="col text-success border border-success m-3")
                     h1 #{newSpec}
-            div(class="row")
-                div(class="col text-secondary bg-light m-3")
-                    h1 Untouched
-                    ul(class="listUntouched text-monospace")
-                        each item in listUntouched
-                            li #{item['name']}
-            div(class="row")
-                div(class="col text-danger border border-danger m-3")
-                    h1 Removed
-                    ul(class="text-monospace listRemoved")
-                        each item in listRemoved
-                            li #{item['name']}
-                div(class="col text-success border border-success m-3")
-                    h1 Added
-                    ul(class="text-monospace listAdded")
-                        each item in listAdded
-                            li #{item['name']}
+            //- div(class="row")
+            //-     div(class="col text-secondary bg-light m-3")
+            //-         h1 Untouched
+            //-         ul(class="listUntouched text-monospace")
+            //-             each item in listUntouched
+            //-                 li #{item['name']}
+            //- div(class="row")
+            //-     div(class="col text-danger border border-danger m-3")
+            //-         h1 Removed
+            //-         ul(class="text-monospace listRemoved")
+            //-             each item in listRemoved
+            //-                 li #{item['name']}
+            //-     div(class="col text-success border border-success m-3")
+            //-         h1 Added
+            //-         ul(class="text-monospace listAdded")
+            //-             each item in listAdded
+            //-                 li #{item['name']}
             div(class="row")
                 div(class="col border border-warning m-3")
                     h1 Modified (TOC)
@@ -36,9 +41,13 @@ html
             div(class="row")
                 div(class="col border border-warning m-3")
                     h1 Modified (Diff)
-                    ul(class="text-monospace")
-                        each item in listModified
-                            li
-                                .
-                                    #{item['name']}
-                                div Diff here
+                    each item in listModified
+                        div(class="text-monospace")
+                            h3 #{item['name']}
+                            div(id=item['name'])
+        script
+            | var diff2htmlUi = {};
+            each item in listModified
+                | diff2htmlUi["#{item['name']}"] = new Diff2HtmlUI({diff: "#{unifiedDiff[item['name']]}"});
+                | diff2htmlUi["#{item['name']}"].draw("##{item['name']}", {matching: "lines"});
+

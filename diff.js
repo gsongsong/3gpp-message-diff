@@ -113,7 +113,14 @@ if (require.main == module) {
                 fs_1.writeFileSync('new.temp.txt', formatter.format(item.name, asn1New, true, 'txt'));
                 child_process_1.spawnSync('diff.exe', ['-U 9999', 'old.temp.txt new.temp.txt',
                     '> uniDiffResult'], { shell: true, encoding: 'utf8' });
-                unifiedDiff[item.name] = fs_1.readFileSync('uniDiffResult', 'utf8');
+                unifiedDiff[item.name] = fs_1.readFileSync('uniDiffResult', 'utf8')
+                    .replace(/\\/g, '\\\\')
+                    .replace(/\n/g, '\\n');
+            }
+            for (let item of ['old.temp.txt', 'new.temp.txt', 'uniDiffResult']) {
+                if (fs_1.existsSync(item)) {
+                    fs_1.unlinkSync(item);
+                }
             }
             let filenameOut = `${filenameOld.base}-${filenameNew.base}.html`;
             fs_1.writeFileSync(path_1.resolve(process.cwd(), filenameOut), pug.renderFile('views/toc.pug', {

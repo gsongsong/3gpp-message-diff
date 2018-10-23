@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, unlinkSync } from 'fs';
 import { parse, resolve } from 'path';
 import { spawnSync } from 'child_process';
 
@@ -123,7 +123,14 @@ if (require.main == module) {
                 spawnSync('diff.exe', ['-U 9999', 'old.temp.txt new.temp.txt',
                                         '> uniDiffResult'],
                                         {shell: true, encoding: 'utf8'});
-                unifiedDiff[item.name] = readFileSync('uniDiffResult', 'utf8');
+                unifiedDiff[item.name] = readFileSync('uniDiffResult', 'utf8')
+                                            .replace(/\\/g, '\\\\')
+                                            .replace(/\n/g, '\\n');
+            }
+            for (let item of ['old.temp.txt', 'new.temp.txt', 'uniDiffResult']) {
+                if (existsSync(item)) {
+                    unlinkSync(item);
+                }
             }
             let filenameOut = `${filenameOld.base}-${filenameNew.base}.html`;
             writeFileSync(resolve(process.cwd(), filenameOut),
