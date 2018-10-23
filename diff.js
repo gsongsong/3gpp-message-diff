@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const fs_1 = require("fs");
 const path_1 = require("path");
+const child_process_1 = require("child_process");
 let extract = require('third-gen-asn1-extractor');
 let parser = require('third-gen-asn1-parser');
 let formatter = require('third-gen-message-formatter-ran2');
@@ -106,6 +107,14 @@ if (require.main == module) {
         }
         if (messageIEname == '__all') {
             let diffResult = diffAll(asn1Old, asn1New);
+            let unifiedDiff = {};
+            for (let item of diffResult.listModified) {
+                fs_1.writeFileSync('old.temp.txt', formatter.format(item.name, asn1Old, true, 'txt'));
+                fs_1.writeFileSync('new.temp.txt', formatter.format(item.name, asn1New, true, 'txt'));
+                child_process_1.spawnSync('diff.exe', ['-U 9999', 'old.temp.txt new.temp.txt',
+                    '> uniDiffResult'], { shell: true, encoding: 'utf8' });
+                unifiedDiff[item.name] = fs_1.readFileSync('uniDiffResult', 'utf8');
+            }
             let filenameOut = `${filenameOld.base}-${filenameNew.base}.html`;
             fs_1.writeFileSync(path_1.resolve(process.cwd(), filenameOut), pug.renderFile('views/toc.pug', {
                 oldSpec: filenameOld.name,
@@ -113,6 +122,7 @@ if (require.main == module) {
                 listAdded: diffResult.listAdded,
                 listRemoved: diffResult.listRemoved,
                 listModified: diffResult.listModified,
+                unifiedDiff: unifiedDiff,
                 listUntouched: diffResult.listUntouched
             }));
         }
