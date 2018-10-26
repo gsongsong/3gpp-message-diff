@@ -134,7 +134,7 @@ if (require.main == module) {
             }
             let filenameOut = `${filenameOld.base}-${filenameNew.base}.html`;
             writeFileSync(resolve(process.cwd(), filenameOut),
-                            pug.renderFile('views/toc.pug', {
+                            pug.renderFile('views/template.pug', {
                                 oldSpec: filenameOld.name,
                                 newSpec: filenameNew.name,
                                 listAdded: diffResult.listAdded,

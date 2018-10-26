@@ -37,17 +37,18 @@ html
                     h1 Modified (TOC)
                     ul(class="listModifiedToc text-monospace")
                         each item in listModified
-                            li #{item['name']}
+                            li
+                                a(href="#" + item['name']) #{item['name']}
             div(class="row")
                 div(class="col border border-warning m-3")
                     h1 Modified (Diff)
                     each item in listModified
                         div(class="text-monospace")
-                            h3 #{item['name']}
-                            div(id=item['name'])
+                            h3(id=item['name']) #{item['name']}
+                            div(id=item['name'] + "-code")
         script
             | var diff2htmlUi = {};
             each item in listModified
                 | diff2htmlUi["#{item['name']}"] = new Diff2HtmlUI({diff: "#{unifiedDiff[item['name']]}"});
-                | diff2htmlUi["#{item['name']}"].draw("##{item['name']}", {matching: "lines"});
+                | diff2htmlUi["#{item['name']}"].draw("##{item['name']}-code", {matching: "lines"});
 
