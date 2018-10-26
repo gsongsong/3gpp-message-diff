@@ -122,15 +122,21 @@ if (require.main == module) {
                     fs_1.unlinkSync(item);
                 }
             }
-            let filenameOut = `${filenameOld.base}-${filenameNew.base}.html`;
-            fs_1.writeFileSync(path_1.resolve(process.cwd(), filenameOut), pug.renderFile('views/template.pug', {
+            let filenameBase = `${filenameOld.base}-${filenameNew.base}`;
+            let filenameOut = `${filenameBase}-untoucheRemovedAdded.html`;
+            fs_1.writeFileSync(path_1.resolve(process.cwd(), filenameOut), pug.renderFile('views/untouchedRemovedAdded.pug', {
                 oldSpec: filenameOld.name,
                 newSpec: filenameNew.name,
                 listAdded: diffResult.listAdded,
                 listRemoved: diffResult.listRemoved,
+                listUntouched: diffResult.listUntouched
+            }));
+            filenameOut = `${filenameBase}-modified.html`;
+            fs_1.writeFileSync(path_1.resolve(process.cwd(), filenameOut), pug.renderFile('views/modified.pug', {
+                oldSpec: filenameOld.name,
+                newSpec: filenameNew.name,
                 listModified: diffResult.listModified,
                 unifiedDiff: unifiedDiff,
-                listUntouched: diffResult.listUntouched
             }));
         }
         else {
