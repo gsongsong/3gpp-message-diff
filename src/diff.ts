@@ -20,13 +20,9 @@ function diff(jsonOld, jsonNew) {
 }
 
 export function diffAll(filenameOld, filenameNew) {
-    let textOld = readFileSync(resolve(process.cwd(), filenameOld.dir,
-                                                      filenameOld.base),
-                                'utf8');
+    let textOld = readFileSync(filenameOld, 'utf8');
     let asn1Old = removeInventory(parser.parse(extract(textOld)));
-    let textNew = readFileSync(resolve(process.cwd(), filenameNew.dir,
-                                                      filenameNew.base),
-                                'utf8');
+    let textNew = readFileSync(filenameNew, 'utf8');
     let asn1New = removeInventory(parser.parse(extract(textNew)));
 
     let listRemoved = [];
