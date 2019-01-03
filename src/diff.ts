@@ -5,6 +5,7 @@ import { spawnSync } from 'child_process';
 let extract = require('third-gen-asn1-extractor');
 let parser = require('third-gen-asn1-parser');
 let formatter = require('third-gen-message-formatter-ran2');
+let jsdiff = require('diff');
 let diffJson = require('diff-json');
 let colors = require('colors');
 let pug = require('pug');
@@ -118,14 +119,13 @@ if (require.main == module) {
             let diffResult = diffAll(asn1Old, asn1New);
             let unifiedDiff: any = {};
             for (let item of diffResult.listModified) {
-                writeFileSync('old.temp.txt', formatter.format(item.name, asn1Old, true, 'txt'));
-                writeFileSync('new.temp.txt', formatter.format(item.name, asn1New, true, 'txt'));
-                spawnSync('diff.exe', ['-U 9999', 'old.temp.txt new.temp.txt',
-                                        '> uniDiffResult'],
-                                        {shell: true, encoding: 'utf8'});
-                unifiedDiff[item.name] = readFileSync('uniDiffResult', 'utf8')
-                                            .replace(/\\/g, '\\\\')
-                                            .replace(/\n/g, '\\n');
+                let patch = jsdiff.createTwoFilesPatch(
+                    `${item.name} (old)`, `${item.name} (new)`,
+                    formatter.format(item.name, asn1Old, true, 'txt'),
+                    formatter.format(item.name, asn1New, true, 'txt')
+                );
+                unifiedDiff[item.name] = patch.replace(/\\/g, '\\\\')
+                                              .replace(/\n/g, '\\n');
             }
             for (let item of ['old.temp.txt', 'new.temp.txt', 'uniDiffResult']) {
                 if (existsSync(item)) {
