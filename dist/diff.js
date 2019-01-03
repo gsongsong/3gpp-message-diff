@@ -136,9 +136,10 @@ if (require.main == module) {
             }));
         }
         else {
-            let diffResult = diff(asn1Old, asn1New);
-            let filenameOut = `${filenameOld.base}-${filenameNew.base}.htm`;
-            fs_1.writeFileSync(path_1.resolve(process.cwd(), filenameOut), diffResult);
+            // TODO
+            // let diffResult = diff(asn1Old, asn1New);
+            // let filenameOut = `${filenameOld.base}-${filenameNew.base}.htm`;
+            // writeFileSync(resolve(process.cwd(), filenameOut), diffResult);
         }
         // console.log(JSON.stringify(ans1Old, null, 2));
         // console.log(JSON.stringify(asn1New, null, 2));
