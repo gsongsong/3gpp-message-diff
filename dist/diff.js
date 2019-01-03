@@ -16,18 +16,22 @@ let tokenPartialChange = '<span style="color: #FF8C00; font-family: monospace;">
 function diff(jsonOld, jsonNew) {
     // TODO
 }
-function diffAll(jsonOld, jsonNew) {
+function diffAll(filenameOld, filenameNew) {
+    let textOld = fs_1.readFileSync(path_1.resolve(process.cwd(), filenameOld.dir, filenameOld.base), 'utf8');
+    let asn1Old = removeInventory(parser.parse(extract(textOld)));
+    let textNew = fs_1.readFileSync(path_1.resolve(process.cwd(), filenameNew.dir, filenameNew.base), 'utf8');
+    let asn1New = removeInventory(parser.parse(extract(textNew)));
     let listRemoved = [];
     let listAdded = [];
     let listUntouched = [];
     let listModified = [];
     let moduleNames = [];
-    for (let moduleName in jsonOld) {
+    for (let moduleName in asn1Old) {
         if (moduleNames.indexOf(moduleName) == -1) {
             moduleNames.push(moduleName);
         }
     }
-    for (let moduleName in jsonNew) {
+    for (let moduleName in asn1New) {
         if (moduleNames.indexOf(moduleName) == -1) {
             moduleNames.push(moduleName);
         }
@@ -35,12 +39,12 @@ function diffAll(jsonOld, jsonNew) {
     moduleNames.sort();
     for (let moduleName of moduleNames) {
         let definitions = [];
-        for (let definition in jsonOld[moduleName]) {
+        for (let definition in asn1Old[moduleName]) {
             if (definitions.indexOf(definition) == -1) {
                 definitions.push(definition);
             }
         }
-        for (let definition in jsonNew[moduleName]) {
+        for (let definition in asn1New[moduleName]) {
             if (definitions.indexOf(definition) == -1) {
                 definitions.push(definition);
             }
@@ -50,29 +54,34 @@ function diffAll(jsonOld, jsonNew) {
             if (definition == 'import') {
                 continue;
             }
-            if (!jsonOld[moduleName] && jsonNew[moduleName]) {
+            if (!asn1Old[moduleName] && asn1New[moduleName]) {
                 listAdded.push({ moduleName: moduleName, name: definition });
                 continue;
             }
-            if (jsonOld[moduleName] && !jsonNew[moduleName]) {
+            if (asn1Old[moduleName] && !asn1New[moduleName]) {
                 listRemoved.push({ moduleName: moduleName, name: definition });
                 continue;
             }
-            if (jsonOld[moduleName] && jsonNew[moduleName]) {
-                if (!jsonOld[moduleName][definition] && jsonNew[moduleName][definition]) {
+            if (asn1Old[moduleName] && asn1New[moduleName]) {
+                if (!asn1Old[moduleName][definition] && asn1New[moduleName][definition]) {
                     listAdded.push({ moduleName: moduleName, name: definition });
                     continue;
                 }
-                if (jsonOld[moduleName][definition] && !jsonNew[moduleName][definition]) {
+                if (asn1Old[moduleName][definition] && !asn1New[moduleName][definition]) {
                     listRemoved.push({ moduleName: moduleName, name: definition });
                     continue;
                 }
-                let diffJsonResult = diffJson.diff(jsonOld[moduleName][definition], jsonNew[moduleName][definition]);
+                let diffJsonResult = diffJson.diff(asn1Old[moduleName][definition], asn1New[moduleName][definition]);
                 if (isJsonEmpty(diffJsonResult)) {
                     listUntouched.push({ moduleName: moduleName, name: definition });
                 }
                 else {
-                    listModified.push({ moduleName: moduleName, name: definition });
+                    let patch = jsdiff.createTwoFilesPatch(`${definition} (old)`, `${definition} (new)`, formatter.format(definition, asn1Old, true, 'txt'), formatter.format(definition, asn1New, true, 'txt'));
+                    listModified.push({
+                        moduleName: moduleName,
+                        name: definition,
+                        patch: patch
+                    });
                 }
                 continue;
             }
@@ -96,21 +105,16 @@ function removeInventory(asn1Json) {
 if (require.main == module) {
     if (process.argv.length >= 4) {
         let filenameOld = path_1.parse(process.argv[2]);
-        let textOld = fs_1.readFileSync(path_1.resolve(process.cwd(), filenameOld.dir, filenameOld.base), 'utf8');
-        let asn1Old = removeInventory(parser.parse(extract(textOld)));
         let filenameNew = path_1.parse(process.argv[3]);
-        let textNew = fs_1.readFileSync(path_1.resolve(process.cwd(), filenameNew.dir, filenameNew.base), 'utf8');
-        let asn1New = removeInventory(parser.parse(extract(textNew)));
         let messageIEname = '__all';
         if (process.argv.length >= 5) {
             messageIEname = process.argv[4];
         }
         if (messageIEname == '__all') {
-            let diffResult = diffAll(asn1Old, asn1New);
+            let diffResult = diffAll(filenameOld, filenameNew);
             let unifiedDiff = {};
             for (let item of diffResult.listModified) {
-                let patch = jsdiff.createTwoFilesPatch(`${item.name} (old)`, `${item.name} (new)`, formatter.format(item.name, asn1Old, true, 'txt'), formatter.format(item.name, asn1New, true, 'txt'));
-                unifiedDiff[item.name] = patch.replace(/\\/g, '\\\\')
+                unifiedDiff[item.name] = item.patch.replace(/\\/g, '\\\\')
                     .replace(/\n/g, '\\n');
             }
             for (let item of ['old.temp.txt', 'new.temp.txt', 'uniDiffResult']) {
