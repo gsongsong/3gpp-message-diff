@@ -76,7 +76,7 @@ function diffAll(filenameOld, filenameNew) {
                     listUntouched.push({ moduleName: moduleName, name: definition });
                 }
                 else {
-                    let patch = jsdiff.createTwoFilesPatch(`${definition} (old)`, `${definition} (new)`, formatter.format(definition, asn1Old, true, 'txt'), formatter.format(definition, asn1New, true, 'txt'));
+                    let patch = jsdiff.createTwoFilesPatch(`${definition} (old)`, `${definition} (new)`, formatter.format(definition, asn1Old, true, 'txt'), formatter.format(definition, asn1New, true, 'txt'), null, null, { context: 9999 });
                     listModified.push({
                         moduleName: moduleName,
                         name: definition,

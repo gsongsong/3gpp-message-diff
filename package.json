@@ -1,7 +1,7 @@
 {
   "name": "third-gen-message-diff",
   "description": "Compares an old and a new 3GPP message/IE definitions",
-  "version": "1.3.4",
+  "version": "1.3.5",
   "main": "dist/diff.js",
   "scripts": {
     "test": "tsc diff & node diff resources\\38331-f10.txt resources\\38331-f21.txt"
