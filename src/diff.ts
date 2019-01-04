@@ -82,10 +82,10 @@ export function diffAll(filenameOld, filenameNew) {
                     listUntouched.push({moduleName: moduleName, name: definition});
                 } else {
                     let patch = jsdiff.createTwoFilesPatch(
-                        `${definition} (old)`, `${definition} (new)`,
+                        `${definition}`, `${definition}`,
                         formatter.format(definition, asn1Old, true, 'txt'),
                         formatter.format(definition, asn1New, true, 'txt'),
-                        null, null,
+                        '(old)', '(new)',
                         {context: 9999}
                     );
                     listModified.push({
